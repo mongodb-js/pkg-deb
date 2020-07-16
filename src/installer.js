@@ -3,8 +3,8 @@
 const { promisify } = require('util')
 
 const _ = require('lodash')
-const common = require('electron-installer-common')
 const getDefaultsFromPackageJSON = require('./defaults')
+const tmp = require('tmp-promise')
 const readMetadata = require('./read-metadata')
 const debug = require('debug')
 const fs = require('fs-extra')
@@ -17,22 +17,25 @@ const exec = promisify(require('child_process').exec);
 const debianDependencies = require('./dependencies')
 const spawn = require('./spawn')
 
-const defaultLogger = debug('electron-installer-debian')
+const defaultLogger = debug('debian-installer')
 
 const defaultRename = (dest, src) => {
   return path.join(dest, '<%= name %>_<%= version %><% if (revision) { %>-<%= revision %><% } %>_<%= arch %>.deb')
 }
 
+tmp.setGracefulCleanup()
+
 module.exports = async data => {
-  // if (process.umask() !== 0o0022 && process.umask() !== 0o0002) {
-  //   console.warn(`The current umask, ${process.umask().toString(8)}, is not supported. You should use 0022 or 0002`)
-  // }
+  if (process.umask() !== 0o0022 && process.umask() !== 0o0002) {
+    console.warn(`The current umask, ${process.umask().toString(8)}, is not supported. You should use 0022 or 0002`)
+  }
 
   const installer = new DebianInstaller(data)
 
   // await installer.generateDefaults()
   // await installer.generateOptions()
   // await installer.createContents()
+  await installer.createStagingDir()
   await installer.createPackage()
   installer.logger(`Successfully created package at ${installer.dest}`)
   return 
@@ -58,7 +61,6 @@ function DebianInstaller (options) {
   this.logger = options.logger || defaultLogger
   this.rename = options.rename || defaultRename
   this.userSupplied = options.userSupplied
-  this.stagingDir = options.stagingDir
   this.sourceDir = options.sourceDir
   this.inputFile = options.inputFile
   this.version = options.version
@@ -98,8 +100,37 @@ DebianInstaller.prototype.generateDefaults = async function () {
 DebianInstaller.prototype.createPackage = async function() {
   this.logger(`Creating package at ${this.stagingDir}`)
 
-  const output = await exec(`dpkg-deb --build ${this.inputFile}`)
+  const output = await exec(`dpkg-deb --build ${this.stagingDir}`)
   this.logger(`dpkg-deb output: ${output}`)
+}
+
+/**
+ * Create temporary directory where the contents of the package will live.
+ */
+DebianInstaller.prototype.createStagingDir = async function () {
+  this.logger('Creating staging directory')
+
+  const dir = await tmp.dir({ prefix: 'debian-installer-', unsafeCleanup: true })
+  // TODO: file name needs to be taken from opts
+  this.stagingDir = path.join(dir.path, `mongosh_0.0.6_amd64`)
+  return fs.ensureDir(this.stagingDir, '0755')
+}
+
+/**
+ * Creates the control file for the package.
+ *
+ * See: https://www.debian.org/doc/debian-policy/ch-controlfields.html
+ */
+DebianInstaller.prototype.createControl = async function () {
+  const src = path.resolve(__dirname, '../resources/control.ejs')
+  const dest = path.join(this.stagingDir, 'DEBIAN', 'control')
+  this.logger(`Creating control file at ${dest}`)
+
+  return await this.createTemplatedFile(src, dest)
+}
+
+DebianInstaller.prototype.createTemplatedFile = async function (templatePath, dest, filePermissions) {
+  return template.createTemplatedFile(templatePath, dest, this.options, filePermissions)
 }
 
 // class DebianInstaller extends common.ElectronInstaller {
@@ -160,18 +191,6 @@ DebianInstaller.prototype.createPackage = async function() {
 //     )
 //   }
 // 
-//   /**
-//    * Creates the control file for the package.
-//    *
-//    * See: https://www.debian.org/doc/debian-policy/ch-controlfields.html
-//    */
-//   createControl () {
-//     const src = path.resolve(__dirname, '../resources/control.ejs')
-//     const dest = path.join(this.stagingDir, 'DEBIAN', 'control')
-//     this.options.logger(`Creating control file at ${dest}`)
-// 
-//     return common.wrapError('creating control file', async () => this.createTemplatedFile(src, dest))
-//   }
 // 
 //   /**
 //    * Create lintian overrides for the package.
