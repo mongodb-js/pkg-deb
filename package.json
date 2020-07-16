@@ -16,10 +16,6 @@
     "electron",
     "debian"
   ],
-  "os": [
-    "darwin",
-    "linux"
-  ],
   "main": "src/installer.js",
   "bin": {
     "electron-installer-debian": "src/cli.js"
