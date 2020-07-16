@@ -34,12 +34,9 @@ class DebianInstaller extends common.ElectronInstaller {
   get contentFunctions () {
     return [
       'copyApplication',
-      'copyLinuxIcons',
       'copyScripts',
-      'createBinarySymlink',
       'createControl',
-      'createCopyright',
-      'createDesktopFile',
+      // 'createCopyright',
       'createOverrides'
     ]
   }
@@ -58,6 +55,16 @@ class DebianInstaller extends common.ElectronInstaller {
   async copyApplication () {
     await super.copyApplication(src => src !== path.join(this.options.src, 'LICENSE'))
     return this.updateSandboxHelperPermissions()
+  }
+
+  /**
+   * Generate the contents of the package in "parallel" by calling the methods specified in
+   * `contentFunctions` getter through `Promise.all`.
+   */
+  async createContents () {
+    debug('Creating contents of package')
+
+    return error.wrapError('creating contents of package', async () => Promise.all(this.contentFunctions.map(func => this[func]())))
   }
 
   /**
@@ -135,7 +142,6 @@ class DebianInstaller extends common.ElectronInstaller {
 
       maintainer: this.getMaintainer(pkg.author),
 
-      icon: path.resolve(__dirname, '../resources/icon.png'),
       lintianOverrides: []
     }, debianDependencies.forElectron(electronVersion))
 
@@ -241,10 +247,8 @@ module.exports = async data => {
   await installer.generateDefaults()
   await installer.generateOptions()
   data.logger(`Creating package with options\n${JSON.stringify(installer.options, null, 2)}`)
-  await installer.createStagingDir()
   await installer.createContents()
   await installer.createPackage()
-  await installer.movePackage()
   data.logger(`Successfully created package at ${installer.options.dest}`)
   return installer.options
 }
