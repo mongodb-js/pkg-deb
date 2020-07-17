@@ -101,11 +101,11 @@ DebianInstaller.prototype.generateDefaults = async function () {
   }
 
   if (this.options.description) {
-    this.options.description = this.normalizeDescription(this.options.description)
+    this.options.description = normalizeDescription(this.options.description)
   }
 
   if (this.options.productDescription) {
-    this.options.productDescription = this.normalizeExtendedDescription(this.options.productDescription)
+    this.options.productDescription = normalizeExtendedDescription(this.options.productDescription)
   }
 
   return this.options
@@ -164,6 +164,10 @@ DebianInstaller.prototype.createTemplatedFile = async function (templatePath, de
   return template.createTemplatedFile(templatePath, dest, this.options, filePermissions)
 }
 
+/**
+ * Sanitize package name per Debian docs:
+ * https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-source
+ */
 function sanitizeName (name) {
   const sanitized = replaceScopeName(name.toLowerCase(), '-').replace(new RegExp(`[^${'-+.a-z0-9'}]`, 'g'), '-')
   if (sanitized.length < 2) {
@@ -196,6 +200,28 @@ function replaceScopeName (name, divider) {
  */
 function transformVersion (version) {
   return version.replace(/(\d)[_.+-]?((RC|rc|pre|dev|beta|alpha)[_.+-]?\d*)$/, '$1~$2')
+}
+
+/**
+ * Normalize the description by replacing all newlines in the description with spaces, since it's
+ * supposed to be one line.
+ */
+function normalizeDescription (description) {
+  return description.replace(/[\r\n]+/g, ' ')
+}
+
+/**
+ * Ensure blank lines have the "." that denotes a blank line in the control file. Wrap any
+ * extended description lines to avoid lintian warnings about
+ * `extended-description-line-too-long`.
+ */
+function normalizeExtendedDescription (extendedDescription) {
+  return extendedDescription
+    .replace(/\r\n/g, '\n') // Fixes errors when finding blank lines in Windows
+    .replace(/^$/mg, '.')
+    .split('\n')
+    .map(line => wrap(line, { width: 80, indent: ' ' }))
+    .join('\n')
 }
 
 // class DebianInstaller extends common.ElectronInstaller {
@@ -278,32 +304,6 @@ function transformVersion (version) {
 //     this.options.logger(`dpkg-deb output: ${output}`)
 //     }
 // 
-//   /**
-//    * Normalize the description by replacing all newlines in the description with spaces, since it's
-//    * supposed to be one line.
-//    */
-//   normalizeDescription (description) {
-//     return description.replace(/[\r\n]+/g, ' ')
-//   }
-// 
-//   /**
-//    * Ensure blank lines have the "." that denotes a blank line in the control file. Wrap any
-//    * extended description lines to avoid lintian warnings about
-//    * `extended-description-line-too-long`.
-//    */
-//   normalizeExtendedDescription (extendedDescription) {
-//     return extendedDescription
-//       .replace(/\r\n/g, '\n') // Fixes errors when finding blank lines in Windows
-//       .replace(/^$/mg, '.')
-//       .split('\n')
-//       .map(line => wrap(line, { width: 80, indent: ' ' }))
-//       .join('\n')
-//   }
-// 
-//   /**
-//    * Sanitize package name per Debian docs:
-//    * https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-source
-//    */
 // }
 
 /* ************************************************************************** */
