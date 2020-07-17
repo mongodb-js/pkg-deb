@@ -8,6 +8,7 @@ const tmp = require('tmp-promise')
 const readMetadata = require('./read-metadata')
 const debug = require('debug')
 const fs = require('fs-extra')
+const getMaintainer = require('./get-maintainer')
 const fsize = promisify(require('get-folder-size'))
 const parseAuthor = require('parse-author')
 const path = require('path')
@@ -46,16 +47,6 @@ module.exports = async data => {
 
 module.exports.Installer = DebianInstaller
 module.exports.transformVersion = transformVersion
-
-/**
- * Transforms a SemVer version into a Debian-style version.
- *
- * Use '~' on pre-releases for proper Debian version ordering.
- * See https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
- */
-function transformVersion (version) {
-  return version.replace(/(\d)[_.+-]?((RC|rc|pre|dev|beta|alpha)[_.+-]?\d*)$/, '$1~$2')
-}
 
 function DebianInstaller (options) {
   if (!(this instanceof DebianInstaller)) return new DebianInstaller(options)
@@ -98,12 +89,12 @@ DebianInstaller.prototype.generateDefaults = async function () {
     priority: 'optional',
     size: Math.ceil((size || 0) / 1024),
 
-    maintainer: this.getMaintainer(pkg.author || pkg.contributors),
+    maintainer: getMaintainer(pkg.author),
 
     lintianOverrides: []
   }, debianDependencies.forElectron(this.version))
 
-  this.options.name = this.sanitizeName(this.options.name)
+  this.options.name = sanitizeName(this.options.name)
 
   if (!this.options.description && !this.options.productDescription) {
     throw new Error("No Description or ProductDescription provided. Please set either a description in the app's package.json or provide it in the this.options.")
@@ -171,6 +162,40 @@ DebianInstaller.prototype.createControl = async function () {
 
 DebianInstaller.prototype.createTemplatedFile = async function (templatePath, dest, filePermissions) {
   return template.createTemplatedFile(templatePath, dest, this.options, filePermissions)
+}
+
+function sanitizeName (name) {
+  const sanitized = replaceScopeName(name.toLowerCase(), '-').replace(new RegExp(`[^${'-+.a-z0-9'}]`, 'g'), '-')
+  if (sanitized.length < 2) {
+    throw new Error('Package name must be at least two characters')
+  }
+  if (/^[^a-z0-9]/.test(sanitized)) {
+    throw new Error('Package name must start with an ASCII number or letter')
+  }
+
+  return sanitized
+}
+
+/**
+ * Normalizes a scoped package name for use as an OS package name.
+ *
+ * @param {?string} [name=''] - the Node package name to normalize
+ * @param {?string} [divider='-'] - the character(s) to replace slashes with
+ */
+function replaceScopeName (name, divider) {
+  name = name || ''
+  divider = divider || '-'
+  return name.replace(/^@/, '').replace('/', divider)
+}
+
+/**
+ * Transforms a SemVer version into a Debian-style version.
+ *
+ * Use '~' on pre-releases for proper Debian version ordering.
+ * See https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
+ */
+function transformVersion (version) {
+  return version.replace(/(\d)[_.+-]?((RC|rc|pre|dev|beta|alpha)[_.+-]?\d*)$/, '$1~$2')
 }
 
 // class DebianInstaller extends common.ElectronInstaller {
@@ -279,17 +304,6 @@ DebianInstaller.prototype.createTemplatedFile = async function (templatePath, de
 //    * Sanitize package name per Debian docs:
 //    * https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-source
 //    */
-//   sanitizeName (name) {
-//     const sanitized = common.sanitizeName(name.toLowerCase(), '-+.a-z0-9')
-//     if (sanitized.length < 2) {
-//       throw new Error('Package name must be at least two characters')
-//     }
-//     if (/^[^a-z0-9]/.test(sanitized)) {
-//       throw new Error('Package name must start with an ASCII number or letter')
-//     }
-// 
-//     return sanitized
-//   }
 // }
 
 /* ************************************************************************** */
