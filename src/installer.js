@@ -11,6 +11,7 @@ const fs = require('fs-extra')
 const fsize = promisify(require('get-folder-size'))
 const parseAuthor = require('parse-author')
 const path = require('path')
+const template = require('./template')
 const wrap = require('word-wrap')
 const exec = promisify(require('child_process').exec);
 
@@ -32,10 +33,11 @@ module.exports = async data => {
 
   const installer = new DebianInstaller(data)
 
-  // await installer.generateDefaults()
+  await installer.generateDefaults()
   // await installer.generateOptions()
   // await installer.createContents()
   await installer.createStagingDir()
+  await installer.createControl();
   await installer.createPackage()
   installer.logger(`Successfully created package at ${installer.dest}`)
   return 
@@ -58,15 +60,25 @@ function transformVersion (version) {
 function DebianInstaller (options) {
   if (!(this instanceof DebianInstaller)) return new DebianInstaller(options)
 
+  // const options = {
+  //   sourceDir: input,
+  //   dest: filename,
+  //   version: version,
+  //   outputDir: outputDir,
+  //   arch: 'amd64'
+  // }
+
   this.logger = options.logger || defaultLogger
   this.rename = options.rename || defaultRename
-  this.userSupplied = options.userSupplied
+  this.packageJSON = options.packageJSON
   this.sourceDir = options.sourceDir
-  this.inputFile = options.inputFile
+  this.outputDir = options.outputDir
   this.version = options.version
-  this.scripts = options.scripts
-  this.name = options.name
-  this.src = options.src
+  this.arch = options.arch
+  this.dest = options.dest
+  // this.userSupplied = options.userSupplied
+  // this.scripts = options.scripts
+  // this.name = options.name
 }
 
 /**
@@ -76,10 +88,10 @@ function DebianInstaller (options) {
 DebianInstaller.prototype.generateDefaults = async function () {
   const [pkg, size] = await Promise.all([
     (async () => (await readMetadata({ sourceDir: this.sourceDir, logger: this.logger })) || {})(),
-    fsize(this.inputFile),
+    fsize(this.sourceDir),
   ])
 
-  this.defaults = Object.assign(getDefaultsFromPackageJSON(pkg), {
+  this.options = Object.assign(getDefaultsFromPackageJSON(pkg), {
     version: transformVersion(this.version || '0.0.0'),
 
     section: 'utils',
@@ -91,8 +103,36 @@ DebianInstaller.prototype.generateDefaults = async function () {
     lintianOverrides: []
   }, debianDependencies.forElectron(this.version))
 
-  return this.defaults
+  this.options.name = this.sanitizeName(this.options.name)
+
+  if (!this.options.description && !this.options.productDescription) {
+    throw new Error("No Description or ProductDescription provided. Please set either a description in the app's package.json or provide it in the this.options.")
+  }
+
+  if (this.options.description) {
+    this.options.description = this.normalizeDescription(this.options.description)
+  }
+
+  if (this.options.productDescription) {
+    this.options.productDescription = this.normalizeExtendedDescription(this.options.productDescription)
+  }
+
+  return this.options
 }
+
+/**
+ * Flattens and merges default values, CLI-supplied options, and API-supplied options.
+ */
+// DebianInstaller.prototype.generateOptions = function() {
+//   this.options = _.defaults({}, this.userSupplied, this.userSupplied.options, this.options)
+// 
+//   // Create array with unique values from default & user-supplied dependencies
+//   for (const prop of ['depends', 'recommends', 'suggests', 'enhances', 'preDepends']) {
+//     this.options[prop] = common.mergeUserSpecified(this.userSupplied, prop, this.options)
+//   }
+// 
+//   return this.options
+// }
 
 /**
  * Package everything using `dpkg` and `fakeroot`.
@@ -212,34 +252,6 @@ DebianInstaller.prototype.createTemplatedFile = async function (templatePath, de
 //     const output = await spawn('fakeroot', ['dpkg-deb', '--build', this.stagingDir], this.options.logger)
 //     this.options.logger(`dpkg-deb output: ${output}`)
 //     }
-// 
-//   /**
-//    * Flattens and merges default values, CLI-supplied options, and API-supplied options.
-//    */
-//   generateOptions () {
-//     super.generateOptions()
-// 
-//     this.options.name = this.sanitizeName(this.options.name)
-// 
-//     if (!this.options.description && !this.options.productDescription) {
-//       throw new Error("No Description or ProductDescription provided. Please set either a description in the app's package.json or provide it in the this.options.")
-//     }
-// 
-//     if (this.options.description) {
-//       this.options.description = this.normalizeDescription(this.options.description)
-//     }
-// 
-//     if (this.options.productDescription) {
-//       this.options.productDescription = this.normalizeExtendedDescription(this.options.productDescription)
-//     }
-// 
-//     // Create array with unique values from default & user-supplied dependencies
-//     for (const prop of ['depends', 'recommends', 'suggests', 'enhances', 'preDepends']) {
-//       this.options[prop] = common.mergeUserSpecified(this.userSupplied, prop, this.defaults)
-//     }
-// 
-//     return this.options
-//   }
 // 
 //   /**
 //    * Normalize the description by replacing all newlines in the description with spaces, since it's
