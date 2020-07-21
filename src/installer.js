@@ -38,9 +38,10 @@ module.exports = async data => {
   // await installer.generateOptions()
   // await installer.createContents()
   await installer.createStagingDir()
-  await installer.createControl();
+  await installer.createControl()
   await installer.createPackage()
-  installer.logger(`Successfully created package at ${installer.dest}`)
+  await installer.writePackage()
+  console.log(`Successfully created package at ${installer.dest}`)
   return 
   // return installer.options
 }
@@ -94,6 +95,7 @@ DebianInstaller.prototype.generateDefaults = async function () {
     lintianOverrides: []
   }, debianDependencies.forElectron(this.version))
 
+  this.options.arch = this.arch
   this.options.name = sanitizeName(this.options.name)
 
   if (!this.options.description && !this.options.productDescription) {
@@ -128,11 +130,15 @@ DebianInstaller.prototype.generateDefaults = async function () {
 /**
  * Package everything using `dpkg` and `fakeroot`.
  */
-DebianInstaller.prototype.createPackage = async function() {
+DebianInstaller.prototype.createPackage = async function () {
   this.logger(`Creating package at ${this.stagingDir}`)
 
-  const output = await exec(`dpkg-deb --build ${this.stagingDir}`)
-  this.logger(`dpkg-deb output: ${output}`)
+  this.output = await exec(`dpkg-deb --build ${this.stagingDir}`)
+  console.log(`dpkg-deb output: ${this.output}`)
+}
+
+DebianInstaller.prototype.writePackage = async function () {
+  fs.writeFile(this.dest, this.output)
 }
 
 /**
