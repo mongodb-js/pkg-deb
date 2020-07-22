@@ -35,9 +35,8 @@ module.exports = async data => {
   const installer = new DebianInstaller(data)
 
   await installer.generateDefaults()
-  // await installer.generateOptions()
-  // await installer.createContents()
   await installer.createStagingDir()
+  await installer.copyApplication()
   await installer.createControl()
   await installer.createPackage()
   await installer.writePackage()
@@ -53,7 +52,7 @@ function DebianInstaller (options) {
   if (!(this instanceof DebianInstaller)) return new DebianInstaller(options)
 
   // const options = {
-  //   sourceDir: input,
+  //   input: input,
   //   dest: filename,
   //   version: version,
   //   outputDir: outputDir,
@@ -63,7 +62,7 @@ function DebianInstaller (options) {
   this.logger = options.logger || defaultLogger
   this.rename = options.rename || defaultRename
   this.packageJSON = options.packageJSON
-  this.sourceDir = options.sourceDir
+  this.input = options.input
   this.outputDir = options.outputDir
   this.version = options.version
   this.arch = options.arch
@@ -79,8 +78,8 @@ function DebianInstaller (options) {
  */
 DebianInstaller.prototype.generateDefaults = async function () {
   const [pkg, size] = await Promise.all([
-    (async () => (await readMetadata({ sourceDir: this.sourceDir, logger: this.logger })) || {})(),
-    fsize(this.sourceDir),
+    (async () => (await readMetadata({ input: this.input, logger: this.logger })) || {})(),
+    fsize(this.input),
   ])
 
   this.options = Object.assign(getDefaultsFromPackageJSON(pkg), {
@@ -91,9 +90,13 @@ DebianInstaller.prototype.generateDefaults = async function () {
     size: Math.ceil((size || 0) / 1024),
 
     maintainer: getMaintainer(pkg.author),
-
+    depends: [],
+    recommends: [],
+    suggests: [],
+    enhances: [],
+    preDepends: [],
     lintianOverrides: []
-  }, debianDependencies.forElectron(this.version))
+  })
 
   this.options.arch = this.arch
   this.options.name = sanitizeName(this.options.name)
@@ -114,31 +117,22 @@ DebianInstaller.prototype.generateDefaults = async function () {
 }
 
 /**
- * Flattens and merges default values, CLI-supplied options, and API-supplied options.
- */
-// DebianInstaller.prototype.generateOptions = function() {
-//   this.options = _.defaults({}, this.userSupplied, this.userSupplied.options, this.options)
-// 
-//   // Create array with unique values from default & user-supplied dependencies
-//   for (const prop of ['depends', 'recommends', 'suggests', 'enhances', 'preDepends']) {
-//     this.options[prop] = common.mergeUserSpecified(this.userSupplied, prop, this.options)
-//   }
-// 
-//   return this.options
-// }
-
-/**
  * Package everything using `dpkg` and `fakeroot`.
  */
 DebianInstaller.prototype.createPackage = async function () {
   this.logger(`Creating package at ${this.stagingDir}`)
+  const ls = await exec(`ls -al ${this.stagingDir}`)
+  console.log('ls in stagingDir', ls)
 
-  this.output = await exec(`dpkg-deb --build ${this.stagingDir}`)
-  console.log(`dpkg-deb output: ${this.output}`)
+  const output = await exec(`dpkg-deb --build ${this.stagingDir}`)
+  // this.options.logger(`dpkg-deb output: ${output}`)
+  console.log('dpkg-deb output:', output)
+  const ls_dir = await exec(`ls -al ${this.dir.path}`)
+  console.log('tmp directory ls:', ls_dir)
 }
 
 DebianInstaller.prototype.writePackage = async function () {
-  fs.writeFile(this.dest, this.output)
+  await fs.copy(path.join(this.dir.path, 'mongosh_0.0.6_amd64.deb'), this.dest)
 }
 
 /**
@@ -147,10 +141,25 @@ DebianInstaller.prototype.writePackage = async function () {
 DebianInstaller.prototype.createStagingDir = async function () {
   this.logger('Creating staging directory')
 
-  const dir = await tmp.dir({ prefix: 'debian-installer-', unsafeCleanup: true })
+  this.dir = await tmp.dir({ prefix: 'debian-installer-', unsafeCleanup: true })
   // TODO: file name needs to be taken from opts
-  this.stagingDir = path.join(dir.path, `mongosh_0.0.6_amd64`)
+  this.stagingDir = path.join(this.dir.path, `mongosh_0.0.6_amd64`)
   return fs.ensureDir(this.stagingDir, '0755')
+}
+
+/**
+ * Copies the bundled application into the staging directory.
+ */
+DebianInstaller.prototype.copyApplication = async function () {
+  console.log(`Copying application to ${this.stagingDir}`)
+  console.log(this.stagingDir)
+  await fs.ensureDir(this.stagingDir, '0755')
+  await fs.copy(this.input, path.join(this.stagingDir, 'mongosh'))
+    .catch(function (e) {
+      console.log('copy error', e)
+    })
+
+  return
 }
 
 /**
@@ -169,6 +178,25 @@ DebianInstaller.prototype.createControl = async function () {
 DebianInstaller.prototype.createTemplatedFile = async function (templatePath, dest, filePermissions) {
   return template.createTemplatedFile(templatePath, dest, this.options, filePermissions)
 }
+
+/**
+ * Move the package to the specified destination.
+ *
+ * Also adds `packagePaths` to `options`, which is an `Array` of the absolute paths to the
+ * moved packages.
+ */
+// DebianInstaller.prototype.movePackage = async function () {
+//   this.logger('Moving package to destination')
+// 
+//   const files = await glob(this.packagePattern)
+//   this.options.packagePaths = await Promise.all(files.map(async file => {
+//     const renameTemplate = this.options.rename(this.options.dest, path.basename(file))
+//     const dest = _.template(renameTemplate)(this.options)
+//     this.logger(`Moving file ${file} to ${dest}`)
+//     await fs.move(file, dest, { clobber: true })
+//     return dest
+//   }))
+// }
 
 /**
  * Sanitize package name per Debian docs:
