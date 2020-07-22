@@ -13,10 +13,10 @@ const path = require('path')
  *             `debug('electron-installer-something:some-module')`
  */
 module.exports = async function readMetadata (options) {
-  const appPackageJSONPath = path.join(options.sourceDir, '..', '..', 'package.json')
+  const appPackageJSONPath = path.join(options.input, '..', '..', 'package.json')
   console.log(`Reading package metadata from ${appPackageJSONPath}`)
   return fs.readJson(appPackageJSONPath)
     .catch( function (err) {
-      throw new Error(`Could not find, read, or parse package.json '${options.sourceDir}':\n${err.message}`)
+      throw new Error(`Could not find, read, or parse package.json '${options.input}':\n${err.message}`)
     })
 }
