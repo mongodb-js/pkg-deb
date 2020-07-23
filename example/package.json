@@ -1,26 +1,9 @@
 {
-  "name": "example-electron-app",
-  "description": "An example app, built with Electron.",
+  "name": "example-pkg-deb",
+  "description": "An example directory structure to work with pkg-deb",
   "version": "0.0.1",
   "license": "MIT",
-  "author": {
-    "name": "Daniel Perez Alvarez",
-    "email": "unindented@gmail.com",
-    "url": "http://unindented.org/"
-  },
+  "author": "Compass Team <compass@mongodb.com>",
   "private": true,
-  "main": "src/index.js",
-  "scripts": {
-    "clean": "rimraf dist",
-    "start": "electron .",
-    "bundle:x64": "electron-packager . --platform linux --arch x64 --out dist/",
-    "deb:x64": "electron-installer-debian --src dist/example-electron-app-linux-x64/ --arch amd64 --config config.json",
-    "build": "npm run clean && npm run bundle:x64 && npm run deb:x64"
-  },
-  "devDependencies": {
-    "electron": "^5.0.0",
-    "electron-installer-debian": "*",
-    "electron-packager": "^13.0.0",
-    "rimraf": "^2.6.2"
-  }
+  "main": "src/index.js"
 }

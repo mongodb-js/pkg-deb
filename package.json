@@ -3,10 +3,10 @@
   "description": "Create a Debian package for a binary",
   "version": "3.1.0",
   "license": "MIT",
-  "author": {
-    "name": "Irina Shestak",
-    "email": "shestak.irina@gmail.com"
-  },
+  "contributors": [
+    "Irina Shestak <shestak.irina@gmail.com>",
+    "Daniel Perez Alvarez <unindented@gmail.com> (http://unindented.org/)"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/mongodb-js/pkg-deb.git"
