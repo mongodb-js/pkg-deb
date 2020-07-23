@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+NAME="Chashu-cat"
+echo "Hello $NAME!"
