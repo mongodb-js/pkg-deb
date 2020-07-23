@@ -16,10 +16,6 @@ const path = require('path')
 
 const defaultLogger = debug('pkg-deb')
 
-const defaultRename = (dest, src) => {
-  return path.join(dest, '<%= name %>_<%= version %><% if (revision) { %>-<%= revision %><% } %>_<%= arch %>.deb')
-}
-
 tmp.setGracefulCleanup()
 
 module.exports = async function (data) {
@@ -43,7 +39,6 @@ function PackageDebian (options) {
   if (!(this instanceof PackageDebian)) return new PackageDebian(options)
 
   this.logger = options.logger || defaultLogger
-  this.rename = options.rename || defaultRename
   this.version = options.version
   this.input = options.input
   this.arch = options.arch
@@ -60,6 +55,8 @@ function PackageDebian (options) {
  */
 PackageDebian.prototype.createPackage = async function () {
   this.logger(`Creating package at ${this.stagingDir}`)
+  // NOTE: depending on how this gets run on evergreen, we might need to use
+  // dpkg-deb, and run it through fakeroot.
   const output = await exec(`dpkg --build ${this.stagingDir}`)
 
   this.logger('dpkg-deb output:', output)

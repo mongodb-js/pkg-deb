@@ -8,7 +8,8 @@ module.exports = function getHomePage (pkg) {
     return pkg.homepage
   } else if (pkg.author) {
     if (typeof pkg.author === 'string') {
-      return parseAuthor(pkg.author).url
+      const url = parseAuthor(pkg.author).url || ''
+      return url
     } else if (pkg.author.url) {
       return pkg.author.url
     }
