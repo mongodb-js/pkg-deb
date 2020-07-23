@@ -1,4 +1,4 @@
-const getHomePage = require('./gethomepage')
+const getHomePage = require('./get-homepage')
 
 /**
  * Generate default configuration values from the given parsed `package.json`.
