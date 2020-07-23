@@ -1,0 +1,8 @@
+{
+  "name": "example-pkg-deb",
+  "description": "An example directory structure to work with pkg-deb",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": "Compass Team <compass@mongodb.com>",
+  "main": "src/index.js"
+}
