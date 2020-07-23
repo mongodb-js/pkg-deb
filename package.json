@@ -1,25 +1,22 @@
 {
-  "name": "electron-installer-debian",
-  "description": "Create a Debian package for your Electron app.",
+  "name": "pkg-deb",
+  "description": "Create a Debian package for a binary",
   "version": "3.1.0",
   "license": "MIT",
   "author": {
-    "name": "Daniel Perez Alvarez",
-    "email": "unindented@gmail.com",
-    "url": "http://unindented.org/"
+    "name": "Irina Shestak",
+    "email": "shestak.irina@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/electron-userland/electron-installer-debian.git"
+    "url": "git://github.com/mongodb-js/pkg-deb.git"
   },
   "keywords": [
-    "electron",
+    "node.js",
+    "binary",
     "debian"
   ],
   "main": "src/installer.js",
-  "bin": {
-    "electron-installer-debian": "src/cli.js"
-  },
   "scripts": {
     "lint": "eslint .",
     "spec": "nyc mocha",
@@ -29,14 +26,12 @@
     "node": ">= 10.0.0"
   },
   "dependencies": {
-    "@malept/cross-spawn-promise": "^1.0.0",
     "debug": "^4.1.1",
-    "electron-installer-common": "^0.10.2",
     "fs-extra": "^9.0.0",
     "get-folder-size": "^2.0.1",
-    "lodash": "^4.17.4",
-    "word-wrap": "^1.2.3",
-    "yargs": "^15.0.1"
+    "lodash.template": "^4.5.0",
+    "tmp-promise": "^3.0.2",
+    "word-wrap": "^1.2.3"
   },
   "devDependencies": {
     "chai": "^4.1.2",
@@ -48,7 +43,6 @@
     "eslint-plugin-standard": "^4.0.0",
     "mocha": "^8.0.1",
     "nyc": "^15.0.0",
-    "promise-retry": "^2.0.1",
-    "tmp-promise": "^3.0.2"
+    "promise-retry": "^2.0.1"
   }
 }
