@@ -5,12 +5,10 @@ const path = require('path')
 /**
  * Create a file from a template. Any necessary directories are automatically created.
  */
-module.exports = async function createTemplatedFile (templatePath, dest, options, filePermissions) {
-  if (filePermissions) fileOptions.mode = filePermissions
-
+module.exports = async function createTemplatedFile (templatePath, dest, options) {
   await fs.ensureDir(path.dirname(dest), '0755')
   const data = await generateTemplate(templatePath, options)
-  return fs.outputFile(dest, data, fileOptions)
+  return fs.outputFile(dest, data)
 }
 
 /**

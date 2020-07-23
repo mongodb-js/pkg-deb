@@ -4,12 +4,10 @@ const { promisify } = require('util')
 
 const getDefaultsFromPackageJSON = require('./defaults')
 const exec = promisify(require('child_process').exec)
-const debianDependencies = require('./dependencies')
 const fsize = promisify(require('get-folder-size'))
 const createTemplatedFile = require('./template')
 const getMaintainer = require('./get-maintainer')
 const readMetadata = require('./read-metadata')
-const parseAuthor = require('parse-author')
 const tmp = require('tmp-promise')
 const wrap = require('word-wrap')
 const debug = require('debug')
@@ -37,7 +35,6 @@ module.exports = async function (data) {
   await pkgDeb.createControl()
   await pkgDeb.createPackage()
   await pkgDeb.writePackage()
-  return 
 }
 
 module.exports.PackageDebian = PackageDebian
@@ -87,7 +84,7 @@ PackageDebian.prototype.writePackage = async function () {
 PackageDebian.prototype.generateDefaults = async function () {
   const [pkg, size] = await Promise.all([
     (async () => (await readMetadata({ input: this.src, logger: this.logger })) || {})(),
-    fsize(this.input),
+    fsize(this.input)
   ])
 
   this.options = Object.assign(getDefaultsFromPackageJSON(pkg), {
@@ -148,8 +145,6 @@ PackageDebian.prototype.copyApplication = async function () {
     .catch(function (e) {
       console.log('copy error', e)
     })
-
-  return
 }
 
 /**
@@ -230,13 +225,13 @@ function normalizeExtendedDescription (extendedDescription) {
 //    */
 //   copyScripts () {
 //     const scriptNames = ['preinst', 'postinst', 'prerm', 'postrm']
-// 
+//
 //     return common.wrapError('creating script files', async () =>
 //       Promise.all(_.map(this.options.scripts, async (item, key) => {
 //         if (scriptNames.includes(key)) {
 //           const scriptFile = path.join(this.stagingDir, 'DEBIAN', key)
 //           this.options.logger(`Creating script file at ${scriptFile}`)
-// 
+//
 //           await fs.copy(item, scriptFile)
 //           return fs.chmod(scriptFile, 0o755)
 //         } else {
@@ -245,7 +240,7 @@ function normalizeExtendedDescription (extendedDescription) {
 //       }))
 //     )
 //   }
-// 
+//
 //   /**
 //    * Create lintian overrides for the package.
 //    */
@@ -253,6 +248,6 @@ function normalizeExtendedDescription (extendedDescription) {
 //     const src = path.resolve(__dirname, '../resources/overrides.ejs')
 //     const dest = path.join(this.stagingDir, this.baseAppDir, 'share/lintian/overrides', this.options.name)
 //     this.options.logger(`Creating lintian overrides at ${dest}`)
-// 
+//
 //     return common.wrapError('creating lintian overrides file', async () => this.createTemplatedFile(src, dest, '0644'))
 //   }

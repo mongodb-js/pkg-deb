@@ -14,7 +14,7 @@ module.exports = async function readMetadata (options) {
   const appPackageJSONPath = path.join(options.src, 'package.json')
   options.logger(`Reading package metadata from ${appPackageJSONPath}`)
   return fs.readJson(appPackageJSONPath)
-    .catch( function (err) {
+    .catch(function (err) {
       throw new Error(`Could not find, read, or parse package.json '${options.src}':\n${err.message}`)
     })
 }
