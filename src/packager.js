@@ -68,7 +68,7 @@ PackageDebian.prototype.createPackage = async function () {
  */
 PackageDebian.prototype.writePackage = async function () {
   this.logger(`Copying package to ${this.dest}`)
-  await fs.copy(path.join(this.dir.path, `${this.packageName}.deb`), this.dest)
+  await fs.copy(path.join(this.dir.path, `${this.packageName}.deb`), path.join(this.dest, `${this.packageName}.deb`))
 }
 
 /**
@@ -80,7 +80,7 @@ PackageDebian.prototype.writePackage = async function () {
  */
 PackageDebian.prototype.generateDefaults = async function () {
   const [pkg, size] = await Promise.all([
-    (async () => (await readMetadata({ input: this.src, logger: this.logger })) || {})(),
+    (async () => (await readMetadata({ src: this.src, logger: this.logger })) || {})(),
     fsize(this.input)
   ])
 
@@ -92,6 +92,7 @@ PackageDebian.prototype.generateDefaults = async function () {
     size: Math.ceil((size || 0) / 1024),
 
     maintainer: getMaintainer(pkg.author),
+    // TODO: the next options should be accepted as package options
     depends: [],
     recommends: [],
     suggests: [],
