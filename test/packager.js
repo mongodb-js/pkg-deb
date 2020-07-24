@@ -1,12 +1,7 @@
-
 const expect = require('chai').expect
-const path = require('path')
-
-const packager = require('..')
-
 const fs = require('fs-extra')
-// const describeInstaller = require('./helpers/describe-packager')
-// const { cleanupOutputDir,describeInstallerWithException, tempOutputDir, testInstallerOptions } = require('./helpers/describe_packager')
+const packager = require('..')
+const path = require('path')
 
 const input = path.join(__dirname, 'fixtures', 'lilbins')
 const dest = path.join(__dirname, 'fixtures', 'dist')
