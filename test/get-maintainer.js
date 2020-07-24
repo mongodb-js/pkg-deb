@@ -22,4 +22,9 @@ describe('getMaintainer', function () {
     }
     expect(getMaintainer(author)).to.equal('Irina Shestak')
   })
+
+  it('returns undefined when no author is provided', function () {
+    const author = undefined
+    expect(getMaintainer(author)).to.equal(undefined)
+  })
 })

@@ -1,7 +1,7 @@
 {
   "name": "pkg-deb",
   "description": "Create a Debian package for a binary",
-  "version": "3.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "contributors": [
     "Irina Shestak <shestak.irina@gmail.com>",
@@ -16,7 +16,7 @@
     "binary",
     "debian"
   ],
-  "main": "src/installer.js",
+  "main": "src/packager.js",
   "scripts": {
     "lint": "eslint .",
     "spec": "nyc mocha",

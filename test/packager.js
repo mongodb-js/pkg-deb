@@ -1,13 +1,13 @@
-// 'use strict'
-//
-// const chai = require('chai')
-// const path = require('path')
-//
-// const installer = require('..')
-//
-// const access = require('./helpers/access')
-// const describeInstaller = require('./helpers/describe_installer')
-// const { cleanupOutputDir, describeInstallerWithException, tempOutputDir, testInstallerOptions } = require('./helpers/describe_installer')
+'use strict'
+
+const chai = require('chai')
+const path = require('path')
+
+const packager = require('..')
+
+const access = require('./helpers/access')
+const describeInstaller = require('./helpers/describe_packager')
+const { cleanupOutputDir, describeInstallerWithException, tempOutputDir, testInstallerOptions } = require('./helpers/describe_packager')
 //
 // const assertASARDebExists = outputDir =>
 //   access(path.join(outputDir, 'footest_i386.deb'))
@@ -198,11 +198,11 @@
 //     })
 //
 //     it('warns the user about umasks', () => {
-//       const installerOptions = testInstallerOptions(outputDir, {
+//       const packagerOptions = testInstallerOptions(outputDir, {
 //         src: 'test/fixtures/app-with-asar/',
 //         options: { arch: 'i386' }
 //       })
-//       return installer(installerOptions)
+//       return packager(packagerOptions)
 //         .catch(() => chai.expect(warning).to.contain(`The current umask, ${process.umask().toString(8)}, is not supported. You should use 0022 or 0002`))
 //     })
 //
@@ -216,8 +216,8 @@
 //
 //   describe('transformVersion', () => {
 //     it('uses tildes for pre-release versions', () => {
-//       chai.expect(installer.transformVersion('1.2.3')).to.equal('1.2.3')
-//       chai.expect(installer.transformVersion('1.2.3-beta.4')).to.equal('1.2.3~beta.4')
+//       chai.expect(packager.transformVersion('1.2.3')).to.equal('1.2.3')
+//       chai.expect(packager.transformVersion('1.2.3-beta.4')).to.equal('1.2.3~beta.4')
 //     })
 //   })
 // })
