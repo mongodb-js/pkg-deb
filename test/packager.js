@@ -56,7 +56,9 @@ describe('Packager', function () {
       try {
         await packager(opts)
       } catch (e) {
-        expect(e.name).to.be.equal('TypeError')
+        // different node versions have a different name for this, so just test
+        // with .include
+        expect(e.name).to.be.include('TypeError')
       }
     })
 
