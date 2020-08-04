@@ -7,6 +7,7 @@ const exec = promisify(require('child_process').exec)
 const fsize = promisify(require('get-folder-size'))
 const createTemplatedFile = require('./template')
 const getMaintainer = require('./get-maintainer')
+const sanitizeName = require('./sanitize-name')
 const readMetadata = require('./read-metadata')
 const tmp = require('tmp-promise')
 const wrap = require('word-wrap')
@@ -140,9 +141,6 @@ PackageDebian.prototype.copyApplication = async function () {
   this.logger(`Copying application to ${this.stagingDir}`)
   await fs.ensureDir(this.stagingDir, '0755')
   await fs.copy(this.input, path.join(this.stagingDir, this.name))
-    .catch(function (e) {
-      console.log('copy error', e)
-    })
 }
 
 /**
@@ -156,34 +154,6 @@ PackageDebian.prototype.createControl = async function () {
   this.logger(`Creating control file at ${dest}`)
 
   return await createTemplatedFile(src, dest, this.options)
-}
-
-/**
- * Sanitize package name per Debian docs:
- * https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-source
- */
-function sanitizeName (name) {
-  const sanitized = replaceScopeName(name.toLowerCase(), '-').replace(new RegExp(`[^${'-+.a-z0-9'}]`, 'g'), '-')
-  if (sanitized.length < 2) {
-    throw new Error('Package name must be at least two characters')
-  }
-  if (/^[^a-z0-9]/.test(sanitized)) {
-    throw new Error('Package name must start with an ASCII number or letter')
-  }
-
-  return sanitized
-}
-
-/**
- * Normalizes a scoped package name for use as an OS package name.
- *
- * @param {?string} [name=''] - the Node package name to normalize
- * @param {?string} [divider='-'] - the character(s) to replace slashes with
- */
-function replaceScopeName (name, divider) {
-  name = name || ''
-  divider = divider || '-'
-  return name.replace(/^@/, '').replace('/', divider)
 }
 
 /**
