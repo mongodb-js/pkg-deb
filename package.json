@@ -1,7 +1,7 @@
 {
   "name": "pkg-deb",
   "description": "Create a Debian package for a binary",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "contributors": [
     "Irina Shestak <shestak.irina@gmail.com>",
