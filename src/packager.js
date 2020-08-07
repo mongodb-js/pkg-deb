@@ -69,7 +69,8 @@ PackageDebian.prototype.createPackage = async function () {
  */
 PackageDebian.prototype.writePackage = async function () {
   this.logger(`Copying package to ${this.dest}`)
-  await fs.copy(path.join(this.dir.path, `${this.packageName}.deb`), path.join(this.dest, `${this.packageName}.deb`))
+  const outputPackage = path.join(this.dest, `${this.packageName}.deb`)
+  await fs.copy(path.join(this.dir.path, `${this.packageName}.deb`), outputPackage)
 }
 
 /**
@@ -140,7 +141,11 @@ PackageDebian.prototype.createStagingDir = async function () {
 PackageDebian.prototype.copyApplication = async function () {
   this.logger(`Copying application to ${this.stagingDir}`)
   await fs.ensureDir(this.stagingDir, '0755')
-  await fs.copy(this.input, path.join(this.stagingDir, this.name))
+  // because we are packaging a binary, we need to make sure it's bundled in
+  // /usr/local/bin
+  const executable = path.join(this.stagingDir, '/usr/local/bin', this.name)
+  await fs.copy(this.input, executable)
+  await fs.chmod(executable, 0o755)
 }
 
 /**
@@ -187,35 +192,3 @@ function normalizeExtendedDescription (extendedDescription) {
     .map(line => wrap(line, { width: 80, indent: ' ' }))
     .join('\n')
 }
-
-//   /**
-//    * Copy debian scripts.
-//    */
-//   copyScripts () {
-//     const scriptNames = ['preinst', 'postinst', 'prerm', 'postrm']
-//
-//     return common.wrapError('creating script files', async () =>
-//       Promise.all(_.map(this.options.scripts, async (item, key) => {
-//         if (scriptNames.includes(key)) {
-//           const scriptFile = path.join(this.stagingDir, 'DEBIAN', key)
-//           this.options.logger(`Creating script file at ${scriptFile}`)
-//
-//           await fs.copy(item, scriptFile)
-//           return fs.chmod(scriptFile, 0o755)
-//         } else {
-//           throw new Error(`Wrong executable script name: ${key}`)
-//         }
-//       }))
-//     )
-//   }
-//
-//   /**
-//    * Create lintian overrides for the package.
-//    */
-//   async createOverrides () {
-//     const src = path.resolve(__dirname, '../resources/overrides.ejs')
-//     const dest = path.join(this.stagingDir, this.baseAppDir, 'share/lintian/overrides', this.options.name)
-//     this.options.logger(`Creating lintian overrides at ${dest}`)
-//
-//     return common.wrapError('creating lintian overrides file', async () => this.createTemplatedFile(src, dest, '0644'))
-//   }
