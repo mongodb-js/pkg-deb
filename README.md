@@ -22,6 +22,9 @@ Your source directory must have a package.json for a properly generated
 * `description`
 * `homepage`
 
+Before packaging the provided binary is written to `/usr/bin` for it to be able
+to be executed globally once installed on a user's system.
+
 ```js
 const pkgDeb = require('pkg-deb')
 const path = require('path')
