@@ -141,9 +141,9 @@ PackageDebian.prototype.createStagingDir = async function () {
 PackageDebian.prototype.copyApplication = async function () {
   this.logger(`Copying application to ${this.stagingDir}`)
   await fs.ensureDir(this.stagingDir, '0755')
-  // because we are packaging a binary, we need to make sure it's bundled in
-  // /usr/local/bin
-  const executable = path.join(this.stagingDir, '/usr/local/bin', this.name)
+  // binary needs to live in /usr/bin (if any data needs to be present, it can
+  // be written to /usr/share.
+  const executable = path.join(this.stagingDir, '/usr/bin', this.name)
   await fs.copy(this.input, executable)
   await fs.chmod(executable, 0o755)
 }

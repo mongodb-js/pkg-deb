@@ -164,7 +164,7 @@ describe('Packager', function () {
     it('PackageDebian.prototype.copyApplication', async function () {
       await pkgDebian.createStagingDir()
       await pkgDebian.copyApplication()
-      const doesExist = await fs.pathExists(path.join(pkgDebian.stagingDir, '/usr/local/bin', pkgDebian.name))
+      const doesExist = await fs.pathExists(path.join(pkgDebian.stagingDir, '/usr/bin', pkgDebian.name))
       // eslint-disable-next-line
       expect(doesExist).to.be.true
     })
